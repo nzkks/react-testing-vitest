@@ -62,3 +62,11 @@ This will start the back-end process at `http://localhost:3000`. If port 3000 is
 
 - json-server.json
 - src/main.tsx
+
+---
+
+## Tips
+
+---
+
+- Once you have `test: { globals: true }` in `vitest.config.ts` OR `vite.config.ts` file, and `"compilerOptions": { "types": ["vitest/globals"] }` in `tsconfig.json` file, you don't need this import statement in every test file `import { it, expect, describe } from 'vitest';`
