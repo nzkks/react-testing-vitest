@@ -4,31 +4,30 @@ import TermsAndConditions from '../../src/components/TermsAndConditions';
 import userEvent from '@testing-library/user-event';
 
 describe('TermsAndConditions', () => {
-  test('should render the correct text and initial state', () => {
+  const renderComponent = () => {
     render(<TermsAndConditions />);
 
-    const heading = screen.getByRole('heading');
-    expect(heading).toBeInTheDocument();
+    return {
+      // if below elements are not found in the DOM, test will fail here itself. So no need of toBeInTheDocument assertion below
+      heading: screen.getByRole('heading'),
+      checkbox: screen.getByRole('checkbox'),
+      button: screen.getByRole('button')
+    };
+  };
+
+  test('should render the correct text and initial state', () => {
+    const { heading, checkbox, button } = renderComponent();
+
     expect(heading).toHaveTextContent(/terms & conditions/i);
-
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).toBeInTheDocument();
     expect(checkbox).not.toBeChecked();
-
-    const button = screen.getByRole('button');
-    expect(button).toBeInTheDocument();
     expect(button).toBeDisabled();
   });
 
   test('should enable the button when the checkbox is checked', async () => {
     const userEvt = userEvent.setup();
+    const { checkbox, button } = renderComponent();
 
-    render(<TermsAndConditions />);
-
-    const checkbox = screen.getByRole('checkbox');
     await userEvt.click(checkbox);
-
-    const button = screen.getByRole('button');
     expect(button).toBeEnabled();
   });
 });
