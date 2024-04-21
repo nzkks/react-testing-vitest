@@ -72,3 +72,5 @@ This will start the back-end process at `http://localhost:3000`. If port 3000 is
 - Once you have `test: { globals: true }` in `vitest.config.ts` OR `vite.config.ts` file, and `"compilerOptions": { "types": ["vitest/globals"] }` in `tsconfig.json` file, you don't need this import statement in every test file `import { it, expect, describe } from 'vitest';`
 
 - Once you have `import '@testing-library/jest-dom';` in `tests\setup.ts` file and reference this setup file as `test: { setupFiles: './tests/setup.ts' }` in `vitest.config.ts` OR `vite.config.ts` file, you don't need the same import statement in every test file.
+
+- Install `Testing Library Snippets` VSCode extension to use the shortcuts to scaffold test lines. Example, `itr` for `import { render, screen } from '@testing-library/react';`
