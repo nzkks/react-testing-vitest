@@ -32,8 +32,7 @@ describe('ProductList', () => {
 
     render(<ProductList />, { wrapper: AllProviders });
 
-    const message = await screen.findByText(/no products/i);
-    expect(message).toBeInTheDocument();
+    expect(await screen.findByText(/no products/i)).toBeInTheDocument();
   });
 
   test('should render an error message when there is an error', async () => {
@@ -41,8 +40,7 @@ describe('ProductList', () => {
 
     render(<ProductList />, { wrapper: AllProviders });
 
-    const message = await screen.findByText(/error/i);
-    expect(message).toBeInTheDocument();
+    expect(await screen.findByText(/error/i)).toBeInTheDocument();
   });
 
   test('should render a loading indicator when fetching data', async () => {
