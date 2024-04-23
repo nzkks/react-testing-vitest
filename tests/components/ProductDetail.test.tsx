@@ -33,6 +33,13 @@ describe('ProductDetail', () => {
     expect(message).toBeInTheDocument();
   });
 
+  test('should render an error if data fetching fails', async () => {
+    server.use(http.get('/products/1', () => HttpResponse.error()));
+    render(<ProductDetail productId={1} />);
+
+    expect(await screen.findByText(/error/i)).toBeInTheDocument();
+  });
+
   test('should render product details', async () => {
     const product = db.product.findFirst({ where: { id: { equals: productId } } });
     render(<ProductDetail productId={productId} />);
