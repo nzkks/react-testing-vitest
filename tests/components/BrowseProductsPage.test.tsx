@@ -1,13 +1,12 @@
 import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
-import { http, HttpResponse, delay } from 'msw';
 import { Theme } from '@radix-ui/themes';
 import userEvent from '@testing-library/user-event';
 
 import { db } from '../mocks/db';
-import { server } from '../mocks/server';
 import { Category, Product } from '../../src/entities';
 import { CartProvider } from '../../src/providers/CartProvider';
 import BrowseProducts from '../../src/pages/BrowseProductsPage';
+import { simulateDelay, simulateError } from '../utils';
 
 describe('BrowseProductsPage', () => {
   const categories: Category[] = [];
@@ -36,74 +35,62 @@ describe('BrowseProductsPage', () => {
         </Theme>
       </CartProvider>
     );
+
+    return {
+      getCategoriesSkeleton: () => screen.queryByRole('progressbar', { name: /categories/i }),
+      getProductsSkeleton: () => screen.queryByRole('progressbar', { name: /products/i }),
+      getCategoriesCombobox: () => screen.queryByRole('combobox')
+    };
   };
 
   test('should show a loading skeleton when fetching categories', () => {
-    server.use(
-      http.get('/categories', async () => {
-        await delay();
-        return HttpResponse.json([]);
-      })
-    );
-
-    renderComponent();
-
-    expect(screen.getByRole('progressbar', { name: /categories/i })).toBeInTheDocument();
+    simulateDelay('/categories');
+    const { getCategoriesSkeleton } = renderComponent();
+    expect(getCategoriesSkeleton()).toBeInTheDocument();
   });
 
   test('should hide the loading skeleton after categories are fetched', async () => {
-    renderComponent();
-
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar', { name: /categories/i }));
+    const { getCategoriesSkeleton } = renderComponent();
+    await waitForElementToBeRemoved(getCategoriesSkeleton);
   });
 
   test('should show a loading skeleton when fetching products', () => {
-    server.use(
-      http.get('/products', async () => {
-        await delay();
-        return HttpResponse.json([]);
-      })
-    );
-
-    renderComponent();
-
-    expect(screen.getByRole('progressbar', { name: /products/i })).toBeInTheDocument();
+    simulateDelay('/products');
+    const { getProductsSkeleton } = renderComponent();
+    expect(getProductsSkeleton()).toBeInTheDocument();
   });
 
   test('should hide the loading skeleton after products are fetched', async () => {
-    renderComponent();
-
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar', { name: /products/i }));
+    const { getProductsSkeleton } = renderComponent();
+    await waitForElementToBeRemoved(getProductsSkeleton);
   });
 
   test('should not render an error if categories cannot be fetched', async () => {
-    server.use(http.get('/categories', () => HttpResponse.error()));
-
-    renderComponent();
-
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar', { name: /categories/i }));
+    simulateError('/categories');
+    const { getCategoriesSkeleton, getCategoriesCombobox } = renderComponent();
+    await waitForElementToBeRemoved(getCategoriesSkeleton);
 
     expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: /category/i })).not.toBeInTheDocument();
+    expect(getCategoriesCombobox()).not.toBeInTheDocument();
   });
 
   test('should render an error if products cannot be fetched', async () => {
-    server.use(http.get('/products', () => HttpResponse.error()));
-
+    simulateError('/products');
     renderComponent();
 
     expect(await screen.findByText(/error/i)).toBeInTheDocument();
   });
 
-  // should render categories
   test('should render categories', async () => {
     const userEvt = userEvent.setup();
-    renderComponent();
+    const { getCategoriesSkeleton, getCategoriesCombobox } = renderComponent();
 
-    const combobox = await screen.findByRole('combobox');
+    await waitForElementToBeRemoved(getCategoriesSkeleton);
+
+    const combobox = getCategoriesCombobox();
     expect(combobox).toBeInTheDocument();
 
-    await userEvt.click(combobox);
+    await userEvt.click(combobox!);
 
     expect(screen.getByRole('option', { name: /all/i })).toBeInTheDocument();
 
@@ -112,11 +99,9 @@ describe('BrowseProductsPage', () => {
     });
   });
 
-  // should render products
   test('should render products', async () => {
-    renderComponent();
-
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar', { name: /products/i }));
+    const { getProductsSkeleton } = renderComponent();
+    await waitForElementToBeRemoved(getProductsSkeleton);
 
     products.forEach(product => {
       expect(screen.getByText(product.name)).toBeInTheDocument();
