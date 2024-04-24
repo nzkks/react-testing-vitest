@@ -2,7 +2,7 @@ import { render, screen, waitForElementToBeRemoved } from '@testing-library/reac
 import { Theme } from '@radix-ui/themes';
 import userEvent from '@testing-library/user-event';
 
-import { db } from '../mocks/db';
+import { db, getProductsBycategoryId } from '../mocks/db';
 import { Category, Product } from '../../src/entities';
 import { CartProvider } from '../../src/providers/CartProvider';
 import BrowseProducts from '../../src/pages/BrowseProductsPage';
@@ -40,10 +40,34 @@ describe('BrowseProductsPage', () => {
       </CartProvider>
     );
 
+    const getCategoriesSkeleton = () => screen.queryByRole('progressbar', { name: /categories/i });
+    const getProductsSkeleton = () => screen.queryByRole('progressbar', { name: /products/i });
+    const getCategoriesCombobox = () => screen.queryByRole('combobox');
+
+    const selectCategory = async (name: RegExp | string) => {
+      await waitForElementToBeRemoved(getCategoriesSkeleton);
+      const combobox = getCategoriesCombobox();
+      const userEvt = userEvent.setup();
+      await userEvt.click(combobox!);
+      const option = screen.getByRole('option', { name });
+      await userEvent.click(option);
+    };
+
+    const expectProductsToBeInTheDocument = (products: Product[]) => {
+      const rows = screen.getAllByRole('row');
+      const dataRows = rows.slice(1); // skip the header row
+      expect(dataRows).toHaveLength(products.length);
+      products.forEach(product => {
+        expect(screen.getByText(product.name)).toBeInTheDocument();
+      });
+    };
+
     return {
-      getCategoriesSkeleton: () => screen.queryByRole('progressbar', { name: /categories/i }),
-      getProductsSkeleton: () => screen.queryByRole('progressbar', { name: /products/i }),
-      getCategoriesCombobox: () => screen.queryByRole('combobox')
+      getCategoriesSkeleton,
+      getProductsSkeleton,
+      getCategoriesCombobox,
+      selectCategory,
+      expectProductsToBeInTheDocument
     };
   };
 
@@ -112,54 +136,22 @@ describe('BrowseProductsPage', () => {
     });
   });
 
-  // should filter products by category
   test('should filter products by category', async () => {
-    const { getCategoriesSkeleton, getCategoriesCombobox } = renderComponent();
+    const { expectProductsToBeInTheDocument, selectCategory } = renderComponent();
 
-    // Arrange
-    const userEvt = userEvent.setup();
-    await waitForElementToBeRemoved(getCategoriesSkeleton);
-    const combobox = getCategoriesCombobox();
-    await userEvt.click(combobox!);
-
-    // Act
     const selectedCategory = categories[0];
-    const selectedOption = screen.getByRole('option', { name: selectedCategory.name });
-    await userEvt.click(selectedOption);
+    await selectCategory(selectedCategory.name);
 
-    // Assert
-    const products = db.product.findMany({ where: { categoryId: { equals: selectedCategory.id } } });
-    const rows = screen.getAllByRole('row');
-    const dataRows = rows.slice(1); // skip the header row
-    expect(dataRows).toHaveLength(products.length);
-
-    products.forEach(product => {
-      expect(screen.getByText(product.name)).toBeInTheDocument();
-    });
+    const products = getProductsBycategoryId(selectedCategory.id);
+    expectProductsToBeInTheDocument(products);
   });
 
-  // should render all products if All category is selected
   test('should render all products if All category is selected', async () => {
-    const { getCategoriesSkeleton, getCategoriesCombobox } = renderComponent();
+    const { expectProductsToBeInTheDocument, selectCategory } = renderComponent();
 
-    // Arrange
-    const userEvt = userEvent.setup();
-    await waitForElementToBeRemoved(getCategoriesSkeleton);
-    const combobox = getCategoriesCombobox();
-    await userEvt.click(combobox!);
+    await selectCategory(/all/i);
 
-    // Act
-    const selectedOption = screen.getByRole('option', { name: /all/i });
-    await userEvt.click(selectedOption);
-
-    // Assert
     const products = db.product.getAll();
-    const rows = screen.getAllByRole('row');
-    const dataRows = rows.slice(1); // skip the header row
-    expect(dataRows).toHaveLength(products.length);
-
-    products.forEach(product => {
-      expect(screen.getByText(product.name)).toBeInTheDocument();
-    });
+    expectProductsToBeInTheDocument(products);
   });
 });
