@@ -14,16 +14,20 @@ describe('BrowseProductsPage', () => {
 
   beforeAll(() => {
     [1, 2].forEach(() => {
-      categories.push(db.category.create());
-      products.push(db.product.create());
+      const category = db.category.create();
+      categories.push(category);
+
+      [1, 2].forEach(() => {
+        products.push(db.product.create({ categoryId: category.id }));
+      });
     });
   });
 
   afterAll(() => {
-    const categoyIds = categories.map(category => category.id);
-    db.category.deleteMany({ id: { in: categoyIds } });
+    const categoryIds = categories.map(c => c.id);
+    db.category.deleteMany({ id: { in: categoryIds } });
 
-    const productIds = products.map(product => product.id);
+    const productIds = products.map(p => p.id);
     db.product.deleteMany({ id: { in: productIds } });
   });
 
@@ -102,6 +106,57 @@ describe('BrowseProductsPage', () => {
   test('should render products', async () => {
     const { getProductsSkeleton } = renderComponent();
     await waitForElementToBeRemoved(getProductsSkeleton);
+
+    products.forEach(product => {
+      expect(screen.getByText(product.name)).toBeInTheDocument();
+    });
+  });
+
+  // should filter products by category
+  test('should filter products by category', async () => {
+    const { getCategoriesSkeleton, getCategoriesCombobox } = renderComponent();
+
+    // Arrange
+    const userEvt = userEvent.setup();
+    await waitForElementToBeRemoved(getCategoriesSkeleton);
+    const combobox = getCategoriesCombobox();
+    await userEvt.click(combobox!);
+
+    // Act
+    const selectedCategory = categories[0];
+    const selectedOption = screen.getByRole('option', { name: selectedCategory.name });
+    await userEvt.click(selectedOption);
+
+    // Assert
+    const products = db.product.findMany({ where: { categoryId: { equals: selectedCategory.id } } });
+    const rows = screen.getAllByRole('row');
+    const dataRows = rows.slice(1); // skip the header row
+    expect(dataRows).toHaveLength(products.length);
+
+    products.forEach(product => {
+      expect(screen.getByText(product.name)).toBeInTheDocument();
+    });
+  });
+
+  // should render all products if All category is selected
+  test('should render all products if All category is selected', async () => {
+    const { getCategoriesSkeleton, getCategoriesCombobox } = renderComponent();
+
+    // Arrange
+    const userEvt = userEvent.setup();
+    await waitForElementToBeRemoved(getCategoriesSkeleton);
+    const combobox = getCategoriesCombobox();
+    await userEvt.click(combobox!);
+
+    // Act
+    const selectedOption = screen.getByRole('option', { name: /all/i });
+    await userEvt.click(selectedOption);
+
+    // Assert
+    const products = db.product.getAll();
+    const rows = screen.getAllByRole('row');
+    const dataRows = rows.slice(1); // skip the header row
+    expect(dataRows).toHaveLength(products.length);
 
     products.forEach(product => {
       expect(screen.getByText(product.name)).toBeInTheDocument();
