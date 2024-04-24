@@ -1,16 +1,40 @@
 import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import { http, HttpResponse, delay } from 'msw';
 import { Theme } from '@radix-ui/themes';
+import userEvent from '@testing-library/user-event';
 
+import { db } from '../mocks/db';
 import { server } from '../mocks/server';
+import { Category, Product } from '../../src/entities';
+import { CartProvider } from '../../src/providers/CartProvider';
 import BrowseProducts from '../../src/pages/BrowseProductsPage';
 
 describe('BrowseProductsPage', () => {
+  const categories: Category[] = [];
+  const products: Product[] = [];
+
+  beforeAll(() => {
+    [1, 2].forEach(() => {
+      categories.push(db.category.create());
+      products.push(db.product.create());
+    });
+  });
+
+  afterAll(() => {
+    const categoyIds = categories.map(category => category.id);
+    db.category.deleteMany({ id: { in: categoyIds } });
+
+    const productIds = products.map(product => product.id);
+    db.product.deleteMany({ id: { in: productIds } });
+  });
+
   const renderComponent = () => {
     render(
-      <Theme>
-        <BrowseProducts />
-      </Theme>
+      <CartProvider>
+        <Theme>
+          <BrowseProducts />
+        </Theme>
+      </CartProvider>
     );
   };
 
@@ -69,5 +93,33 @@ describe('BrowseProductsPage', () => {
     renderComponent();
 
     expect(await screen.findByText(/error/i)).toBeInTheDocument();
+  });
+
+  // should render categories
+  test('should render categories', async () => {
+    const userEvt = userEvent.setup();
+    renderComponent();
+
+    const combobox = await screen.findByRole('combobox');
+    expect(combobox).toBeInTheDocument();
+
+    await userEvt.click(combobox);
+
+    expect(screen.getByRole('option', { name: /all/i })).toBeInTheDocument();
+
+    categories.forEach(category => {
+      expect(screen.getByRole('option', { name: category.name })).toBeInTheDocument();
+    });
+  });
+
+  // should render products
+  test('should render products', async () => {
+    renderComponent();
+
+    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar', { name: /products/i }));
+
+    products.forEach(product => {
+      expect(screen.getByText(product.name)).toBeInTheDocument();
+    });
   });
 });
