@@ -23,6 +23,11 @@ describe('ProductForm', () => {
     render(<ProductForm product={product} onSubmit={onSubmit} />, { wrapper: AllProviders });
 
     return {
+      expectErrorToBeInTheDocument: (errorMessage: RegExp) => {
+        const error = screen.getByRole('alert');
+        expect(error).toBeInTheDocument();
+        expect(error).toHaveTextContent(errorMessage);
+      },
       waitForFormLoad: async () => {
         await screen.findByRole('form');
 
@@ -69,7 +74,7 @@ describe('ProductForm', () => {
     { scenario: 'not a number', price: 'a', errorMessage: /required/ }
   ])('should display an error if price is $scenario', async ({ price, errorMessage }) => {
     const userEvt = userEvent.setup();
-    const { waitForFormLoad } = renderComponent();
+    const { expectErrorToBeInTheDocument, waitForFormLoad } = renderComponent();
 
     const form = await waitForFormLoad();
     await userEvt.type(form.nameInput, 'a');
@@ -79,8 +84,6 @@ describe('ProductForm', () => {
     await userEvt.click(options[0]);
     await userEvt.click(form.submitButton);
 
-    const error = screen.getByRole('alert');
-    expect(error).toBeInTheDocument();
-    expect(error).toHaveTextContent(errorMessage);
+    expectErrorToBeInTheDocument(errorMessage);
   });
 });
