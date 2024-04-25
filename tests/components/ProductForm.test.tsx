@@ -62,15 +62,18 @@ describe('ProductForm', () => {
   });
 
   test.each([
-    { scenario: 'missing', errorMessage: /required/i }, // this will create a test called "should display an error if name is 'missing'"
-    { scenario: 'longer than 255 characters', name: 'a'.repeat(256), errorMessage: /255/ } // this will create a test called "should display an error if name is 'longer than 255 characters'"
-  ])('should display an error if name is $scenario', async ({ name, errorMessage }) => {
+    { scenario: 'missing', errorMessage: /required/i },
+    { scenario: '0', price: 0, errorMessage: /1/ },
+    { scenario: 'negative', price: -1, errorMessage: /1/ },
+    { scenario: 'greater than 1000', price: 1001, errorMessage: /1000/ },
+    { scenario: 'not a number', price: 'a', errorMessage: /required/ }
+  ])('should display an error if price is $scenario', async ({ price, errorMessage }) => {
     const userEvt = userEvent.setup();
     const { waitForFormLoad } = renderComponent();
 
     const form = await waitForFormLoad();
-    if (name !== undefined) await userEvt.type(form.nameInput, name);
-    await userEvt.type(form.priceInput, '10');
+    await userEvt.type(form.nameInput, 'a');
+    if (price !== undefined) await userEvt.type(form.priceInput, price.toString());
     await userEvt.click(form.categoryInput);
     const options = screen.getAllByRole('option');
     await userEvt.click(options[0]);
