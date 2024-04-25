@@ -10,7 +10,7 @@ const CategorySelect = ({ onChange }: { onChange: (categoryId: number) => void }
     isLoading,
     error,
     data: categories
-  } = useQuery({
+  } = useQuery<Category[], Error>({
     queryKey: ['categories'],
     queryFn: () => axios.get<Category[]>('/categories').then(res => res.data)
   });
