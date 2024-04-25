@@ -51,4 +51,10 @@ describe('ProductForm', () => {
     expect(priceInput).toHaveValue(product.price.toString());
     expect(categoryInput).toHaveTextContent(category.name);
   });
+
+  test('should put focus on the name field', async () => {
+    const { waitForFormLoad } = renderComponent();
+    const { nameInput } = await waitForFormLoad();
+    expect(nameInput).toHaveFocus(); // OR if only one textbox: expect(document.activeElement).toBe(nameInput);
+  });
 });
