@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
 import ProductForm from '../../src/components/ProductForm';
 import AllProviders from '../AllProviders';
 import { Category, Product } from '../../src/entities';
@@ -27,7 +29,8 @@ describe('ProductForm', () => {
         return {
           nameInput: screen.getByPlaceholderText(/name/i),
           priceInput: screen.getByPlaceholderText(/price/i),
-          categoryInput: screen.getByRole('combobox', { name: /category/i })
+          categoryInput: screen.getByRole('combobox', { name: /category/i }),
+          submitButton: screen.getByRole('button', { name: /submit/i })
         };
       }
     };
@@ -56,5 +59,21 @@ describe('ProductForm', () => {
     const { waitForFormLoad } = renderComponent();
     const { nameInput } = await waitForFormLoad();
     expect(nameInput).toHaveFocus(); // OR if only one textbox: expect(document.activeElement).toBe(nameInput);
+  });
+
+  test('should display an error if name is missing', async () => {
+    const userEvt = userEvent.setup();
+    const { waitForFormLoad } = renderComponent();
+
+    const form = await waitForFormLoad();
+    await userEvt.type(form.priceInput, '10');
+    await userEvt.click(form.categoryInput);
+    const options = screen.getAllByRole('option');
+    await userEvt.click(options[0]);
+    await userEvt.click(form.submitButton);
+
+    const error = screen.getByRole('alert');
+    expect(error).toBeInTheDocument();
+    expect(error).toHaveTextContent(/required/i);
   });
 });
