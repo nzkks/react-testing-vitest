@@ -21,8 +21,9 @@ describe('ProductForm', () => {
     render(<ProductForm product={product} onSubmit={onSubmit} />, { wrapper: AllProviders });
 
     return {
-      waitForFormLoad: () => screen.findByRole('form'),
-      getInputs: () => {
+      waitForFormLoad: async () => {
+        await screen.findByRole('form');
+
         return {
           nameInput: screen.getByPlaceholderText(/name/i),
           priceInput: screen.getByPlaceholderText(/price/i),
@@ -33,9 +34,8 @@ describe('ProductForm', () => {
   };
 
   test('should render form fields', async () => {
-    const { waitForFormLoad, getInputs } = renderComponent();
-    await waitForFormLoad();
-    const { nameInput, priceInput, categoryInput } = getInputs();
+    const { waitForFormLoad } = renderComponent();
+    const { nameInput, priceInput, categoryInput } = await waitForFormLoad();
 
     expect(nameInput).toBeInTheDocument();
     expect(priceInput).toBeInTheDocument();
@@ -44,9 +44,8 @@ describe('ProductForm', () => {
 
   test('should populate form fields when editing a product', async () => {
     product = { id: 1, name: 'Product 1', price: 10, categoryId: category.id };
-    const { waitForFormLoad, getInputs } = renderComponent(product);
-    await waitForFormLoad();
-    const { nameInput, priceInput, categoryInput } = getInputs();
+    const { waitForFormLoad } = renderComponent(product);
+    const { nameInput, priceInput, categoryInput } = await waitForFormLoad();
 
     expect(nameInput).toHaveValue(product.name);
     expect(priceInput).toHaveValue(product.price.toString());
