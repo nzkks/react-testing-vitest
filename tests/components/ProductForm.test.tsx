@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Toaster } from 'react-hot-toast';
 
 import ProductForm from '../../src/components/ProductForm';
 import AllProviders from '../AllProviders';
@@ -23,9 +24,16 @@ describe('ProductForm', () => {
 
   const renderComponent = (product?: Product) => {
     const onSubmit = vi.fn();
-    render(<ProductForm product={product} onSubmit={onSubmit} />, { wrapper: AllProviders });
+    render(
+      <>
+        <ProductForm product={product} onSubmit={onSubmit} />
+        <Toaster />
+      </>,
+      { wrapper: AllProviders }
+    );
 
     return {
+      onSubmit,
       expectErrorToBeInTheDocument: (errorMessage: RegExp) => {
         const error = screen.getByRole('alert');
         expect(error).toBeInTheDocument();
@@ -48,7 +56,7 @@ describe('ProductForm', () => {
           id: 1,
           name: 'Product 1',
           price: 10,
-          categoryId: 1
+          categoryId: category.id
         };
 
         const fill = async (product: FormData) => {
@@ -130,5 +138,29 @@ describe('ProductForm', () => {
     await form.fill({ ...form.validData, price });
 
     expectErrorToBeInTheDocument(errorMessage);
+  });
+
+  test('should call onSubmit with the correct data', async () => {
+    const { waitForFormLoad, onSubmit } = renderComponent();
+
+    const form = await waitForFormLoad();
+    await form.fill(form.validData);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars
+    const { id, ...formData } = form.validData;
+    expect(onSubmit).toHaveBeenCalledWith(formData);
+  });
+
+  test('should display a toast if submission fails', async () => {
+    const { waitForFormLoad, onSubmit } = renderComponent();
+    onSubmit.mockRejectedValue({});
+
+    const form = await waitForFormLoad();
+    await form.fill(form.validData);
+
+    const toast = await screen.findByRole('status');
+
+    expect(toast).toBeInTheDocument();
+    expect(toast).toHaveTextContent(/error/i);
   });
 });
