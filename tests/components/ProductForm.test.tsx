@@ -57,6 +57,7 @@ describe('ProductForm', () => {
           if (product.name !== undefined) await userEvt.type(nameInput, product.name);
           if (product.price !== undefined) await userEvt.type(priceInput, product.price.toString());
 
+          await userEvt.tab();
           await userEvt.click(categoryInput);
           const options = screen.getAllByRole('option');
           await userEvt.click(options[0]);
