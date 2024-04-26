@@ -31,11 +31,41 @@ describe('ProductForm', () => {
       waitForFormLoad: async () => {
         await screen.findByRole('form');
 
+        const nameInput = screen.getByPlaceholderText(/name/i);
+        const priceInput = screen.getByPlaceholderText(/price/i);
+        const categoryInput = screen.getByRole('combobox', { name: /category/i });
+        const submitButton = screen.getByRole('button', { name: /submit/i });
+
+        type FormData = {
+          [K in keyof Product]: any;
+        };
+
+        const validData: FormData = {
+          id: 1,
+          name: 'Product 1',
+          price: 10,
+          categoryId: 1
+        };
+
+        const fill = async (product: FormData) => {
+          const userEvt = userEvent.setup();
+
+          if (product.name !== undefined) await userEvt.type(nameInput, product.name);
+          if (product.price !== undefined) await userEvt.type(priceInput, product.price.toString());
+
+          await userEvt.click(categoryInput);
+          const options = screen.getAllByRole('option');
+          await userEvt.click(options[0]);
+          await userEvt.click(submitButton);
+        };
+
         return {
-          nameInput: screen.getByPlaceholderText(/name/i),
-          priceInput: screen.getByPlaceholderText(/price/i),
-          categoryInput: screen.getByRole('combobox', { name: /category/i }),
-          submitButton: screen.getByRole('button', { name: /submit/i })
+          nameInput,
+          priceInput,
+          categoryInput,
+          submitButton,
+          validData,
+          fill
         };
       }
     };
@@ -74,16 +104,10 @@ describe('ProductForm', () => {
       errorMessage: /255/
     }
   ])('should display an error if name is $scenario', async ({ name, errorMessage }) => {
-    const userEvt = userEvent.setup();
     const { expectErrorToBeInTheDocument, waitForFormLoad } = renderComponent();
 
     const form = await waitForFormLoad();
-    if (name !== undefined) await userEvt.type(form.nameInput, name);
-    await userEvt.type(form.priceInput, '10');
-    await userEvt.click(form.categoryInput);
-    const options = screen.getAllByRole('option');
-    await userEvt.click(options[0]);
-    await userEvt.click(form.submitButton);
+    await form.fill({ ...form.validData, name });
 
     expectErrorToBeInTheDocument(errorMessage);
   });
@@ -95,16 +119,10 @@ describe('ProductForm', () => {
     { scenario: 'greater than 1000', price: 1001, errorMessage: /1000/ },
     { scenario: 'not a number', price: 'a', errorMessage: /required/ }
   ])('should display an error if price is $scenario', async ({ price, errorMessage }) => {
-    const userEvt = userEvent.setup();
     const { expectErrorToBeInTheDocument, waitForFormLoad } = renderComponent();
 
     const form = await waitForFormLoad();
-    await userEvt.type(form.nameInput, 'a');
-    if (price !== undefined) await userEvt.type(form.priceInput, price.toString());
-    await userEvt.click(form.categoryInput);
-    const options = screen.getAllByRole('option');
-    await userEvt.click(options[0]);
-    await userEvt.click(form.submitButton);
+    await form.fill({ ...form.validData, price });
 
     expectErrorToBeInTheDocument(errorMessage);
   });
