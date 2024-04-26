@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -37,6 +40,7 @@ describe('ProductForm', () => {
         const submitButton = screen.getByRole('button', { name: /submit/i });
 
         type FormData = {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           [K in keyof Product]: any;
         };
 
