@@ -10,8 +10,8 @@ describe('CategoryList', () => {
   const categories: Category[] = [];
 
   beforeAll(() => {
-    [1, 2].forEach(() => {
-      const category = db.category.create();
+    [1, 2].forEach(item => {
+      const category = db.category.create({ name: `Category ${item}` });
       categories.push(category);
     });
   });
