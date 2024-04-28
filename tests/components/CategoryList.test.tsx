@@ -1,7 +1,7 @@
 import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 
 import CategoryList from '../../src/components/CategoryList';
-import ReduxProvider from '../../src/providers/ReduxProvider';
+import AllProviders from '../AllProviders';
 import { db } from '../mocks/db';
 import { Category } from '../../src/entities';
 import { simulateDelay, simulateError } from '../utils';
@@ -21,12 +21,7 @@ describe('CategoryList', () => {
     db.category.deleteMany({ where: { id: { in: categoryIds } } });
   });
 
-  const renderComponent = () =>
-    render(
-      <ReduxProvider>
-        <CategoryList />
-      </ReduxProvider>
-    );
+  const renderComponent = () => render(<CategoryList />, { wrapper: AllProviders });
 
   test('should render an error message if fetching categories fails', async () => {
     simulateError('/categories');
